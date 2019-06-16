@@ -7,4 +7,4 @@ in the loop in order to have as many clients as we want. The more the clients, t
 the script takes to finish!
 5. Now, after everything has compiled successfully, we can execute the functions from
 PSGBD_APP_SQL_Functions.txt, one by one. They are well delimited one from another.
-After that, the databae part should be working.
+After that, the database part should be working.
