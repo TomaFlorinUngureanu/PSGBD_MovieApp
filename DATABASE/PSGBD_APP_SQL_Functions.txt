@@ -1,0 +1,563 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+create or replace FUNCTION generare_parola
+RETURN varchar2 as
+ v_parola varchar2(40);
+BEGIN
+  v_parola := CHR(FLOOR(DBMS_RANDOM.VALUE(65,91))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(48,58))) || CHR(FLOOR(DBMS_RANDOM.VALUE(48,58)));
+  return v_parola;
+END;
+
+create or replace FUNCTION info_utilizator(p_email IN varchar2)
+RETURN VARCHAR2 AS
+v_info_utilizator varchar2(300) := '';
+BEGIN
+  select 'id='||ID||';nume='||NUME||';prenume='||PRENUME||';parola='||PAROLA||';email='||email into v_info_utilizator from utilizatori natural join emails where email like p_email;
+  return v_info_utilizator;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+create or replace FUNCTION lista_filme_filtrare(p_titlu varchar2, p_gen varchar2, p_data1 date, p_data2 date, p_durata varchar2)
+RETURN varchar2 as
+  v_lista varchar2(32667) := '';
+  v_genuri varchar2(100) := '';
+BEGIN
+  IF (p_titlu is null and p_gen is null and p_data1 is null and p_data2 is null and p_durata is null)
+  THEN
+  v_lista := 'Eroare: Toate campurile sunt lasate necompletate.';
+  return v_lista;
+  ELSIF ((p_data1 is not null and p_data2 is null) or (p_data2 is not null and p_data1 is null))
+  THEN
+  v_lista := 'Eroare: N-au fost trecute ambele date.';
+  return v_lista;
+  ELSIF (p_titlu is not null and p_gen is null and p_data1 is null and p_data2 is null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is null and p_data1 is null and p_data2 is null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and f.durata<=p_durata group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is null and p_data1 is not null and p_data2 is not null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and f.durata<=p_durata and f.data_lansare between p_data1 and p_data2 group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is not null and p_data1 is not null and p_data2 is not null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and f.durata<=p_durata and f.data_lansare between p_data1 and p_data2 and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is not null and p_data1 is not null and p_data2 is not null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.durata<=p_durata and f.data_lansare between p_data1 and p_data2 and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is not null and p_data1 is not null and p_data2 is not null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.data_lansare between p_data1 and p_data2 and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is not null and p_data1 is  null and p_data2 is  null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is null and p_data1 is not null and p_data2 is not null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.data_lansare between p_data1 and p_data2 group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is null and p_data1 is null and p_data2 is null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.durata<=p_durata group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+   ELSIF (p_titlu is null and p_gen is not null and p_data1 is null and p_data2 is null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.durata<=p_durata and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by nota desc) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is null and p_gen is null and p_data1 is not null and p_data2 is not null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where f.durata<=p_durata and f.data_lansare between p_data1 and p_data2 group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is not null and p_data1 is null and p_data2 is null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is null and p_data1 is not null and p_data2 is not null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%'))  and f.data_lansare between p_data1 and p_data2 group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is not null and p_data1 is not null and p_data2 is not null and p_durata is null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and f.data_lansare between p_data1 and p_data2 and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  ELSIF (p_titlu is not null and p_gen is not null and p_data1 is null and p_data2 is null and p_durata is not null)
+  THEN
+   FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film where lower(titlu) like lower(('%'||p_titlu||'%')) and f.durata<=p_durata and exists(select * from genuri g where n.id_film=g.id_film and g.gen=p_gen) group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film) where rownum<50) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+  END IF;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+create or replace FUNCTION lista_filme_filtrare_top
+RETURN varchar2 as
+ v_lista varchar2(32667) := '';
+  v_genuri varchar2(100) := '';
+BEGIN
+FOR v_std_linie IN  (select * from (select f.*, trunc(avg(valoare),2) as nota from filme f join notee n on f.id=n.id_film group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by avg(valoare) desc) where rownum<101) LOOP
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+             v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.nota||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+create or replace FUNCTION lista_filme_utilizator(p_id varchar2)
+RETURN varchar2 as
+  v_lista varchar2(32667) := '';
+  v_genuri varchar2(100) := '';
+BEGIN
+  FOR v_std_linie IN  (select * from utilizatori u join notee n on u.id=n.id_utilizator join filme f on n.id_film=f.id where u.id=p_id order by valoare desc) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id_film) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+       v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='|| v_std_linie.valoare||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';END LOOP;  
+    return v_lista;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+create or replace FUNCTION recomandare (p_id_utilizator varchar2)
+RETURN VARCHAR2 as
+TYPE vector IS TABLE OF PLS_INTEGER INDEX BY VARCHAR2(7);
+    scor vector;
+    p_imax1 pls_integer := 0;
+    p_idmax1 int;
+    p_imax2 pls_integer := 0;
+    p_idmax2 int;
+    p_imax3 pls_integer := 0;
+    p_idmax3 int;
+    p_imax4 pls_integer := 0;
+    p_idmax4 int;
+    p_imax5 pls_integer := 0;
+    p_idmax5 int;
+    p_test int :=1;
+    l_idx    varchar2(7);
+    p_id number(30,0);
+    p_val1 int;
+    p_val2 int;
+    v_lista varchar2(32667) := '';
+    v_genuri varchar2(100) := '';
+BEGIN
+  FOR v_std_linie IN  (select n2.id_utilizator as id2 from notee n1 join notee n2 on n1.id_film=n2.id_film where n1.id_utilizator=p_id_utilizator and n2.id_utilizator<>p_id_utilizator order by n2.id_utilizator) LOOP  
+    scor(v_std_linie.id2) := 0;
+  END LOOP;  
+  FOR v_std_linie IN  (select n2.id_utilizator as id2, n1.valoare as val1, n2.valoare as val2 from notee n1 join notee n2 on n1.id_film=n2.id_film where n1.id_utilizator=p_id_utilizator and n2.id_utilizator<>p_id_utilizator order by n2.id_utilizator) LOOP  
+    p_id := v_std_linie.id2;
+    p_val1 := v_std_linie.val1;
+    p_val2 := v_std_linie.val2;
+    IF (p_val1 = p_val2)
+    THEN
+      IF (p_val1=10 or p_val1=9)
+      THEN
+         scor(p_id) := scor(p_id) +5;
+      ELSIF (p_val1=8 or p_val1=7)
+      THEN 
+         scor(p_id) := scor(p_id) +3;
+      ELSE
+         scor(p_id) := scor(p_id) +1;
+      END IF;
+    ELSIF(p_val1 > p_val2)
+    THEN
+      IF (p_val1 in (8,9,10) and p_val2 in (1,2,3))
+      THEN
+        scor(p_id) := scor(p_id) -5;
+      ELSIF (p_val1 in (8,9,10) and p_val2 in (4,5,6))
+      THEN
+        scor(p_id) := scor(p_id) -3;
+        ELSIF (p_val1 in (8,9,10) and p_val2 in (7))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+        ELSIF (p_val1 in (8,9,10) and p_val2 in (8,9,10))
+      THEN
+        scor(p_id) := scor(p_id) +3;
+         ELSIF (p_val1 in (7,6,5) and p_val2 in (1,2,3))
+      THEN
+        scor(p_id) := scor(p_id) -1;
+         ELSIF (p_val1 in (7,6,5) and p_val2 in (4,5,6,7))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+        ELSIF (p_val1 in (1,2,3,4) and p_val2 in (1,2,3,4))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+      END IF;
+    ELSE
+    IF (p_val2 in (8,9,10) and p_val1 in (1,2,3))
+      THEN
+        scor(p_id) := scor(p_id) -5;
+      ELSIF (p_val2 in (8,9,10) and p_val1 in (4,5,6))
+      THEN
+        scor(p_id) := scor(p_id) -3;
+        ELSIF (p_val2 in (8,9,10) and p_val1 in (7))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+        ELSIF (p_val2 in (8,9,10) and p_val1 in (8,9,10))
+      THEN
+        scor(p_id) := scor(p_id) +3;
+         ELSIF (p_val2 in (7,6,5) and p_val1 in (1,2,3))
+      THEN
+        scor(p_id) := scor(p_id) -1;
+         ELSIF (p_val2 in (7,6,5) and p_val1 in (4,5,6,7))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+        ELSIF (p_val2 in (1,2,3,4) and p_val1 in (1,2,3,4))
+      THEN
+        scor(p_id) := scor(p_id) +1;
+      END IF;
+    END IF;
+  END LOOP;  
+  l_idx := scor.first;
+       while (l_idx is not null)
+      loop
+      if(scor(l_idx)>p_imax1)
+      then
+         p_imax1 := scor(l_idx);
+         p_idmax1 := l_idx;
+      end if;
+          l_idx := scor.next(l_idx);
+     end loop;
+     l_idx := scor.first;
+       while (l_idx is not null)
+      loop
+      if(scor(l_idx)>p_imax2 and p_idmax1<>l_idx)
+      then
+         p_imax2 := scor(l_idx);
+         p_idmax2 := l_idx;
+      end if;
+          l_idx := scor.next(l_idx);
+     end loop;
+     l_idx := scor.first;
+       while (l_idx is not null)
+      loop
+      if(scor(l_idx)>p_imax3 and p_idmax1<>l_idx and p_idmax2<>l_idx)
+      then
+         p_imax3 := scor(l_idx);
+         p_idmax3 := l_idx;
+      end if;
+          l_idx := scor.next(l_idx);
+     end loop;
+     l_idx := scor.first;
+       while (l_idx is not null)
+      loop
+      if(scor(l_idx)>p_imax4 and p_idmax1<>l_idx and p_idmax2<>l_idx and p_idmax3<>l_idx)
+      then
+         p_imax4 := scor(l_idx);
+         p_idmax4 := l_idx;
+      end if;
+          l_idx := scor.next(l_idx);
+     end loop;
+     l_idx := scor.first;
+       while (l_idx is not null)
+      loop
+      if(scor(l_idx)>p_imax5 and p_idmax1<>l_idx and p_idmax2<>l_idx and p_idmax3<>l_idx and p_idmax4<>l_idx)
+      then
+         p_imax5 := scor(l_idx);
+         p_idmax5 := l_idx;
+      end if;
+          l_idx := scor.next(l_idx);
+     end loop;
+     DBMS_OUTPUT.PUT_LINE(p_imax1||' '||p_idmax1);
+     DBMS_OUTPUT.PUT_LINE(p_imax2||' '||p_idmax2);
+     DBMS_OUTPUT.PUT_LINE(p_imax3||' '||p_idmax3);
+     DBMS_OUTPUT.PUT_LINE(p_imax4||' '||p_idmax4);
+     DBMS_OUTPUT.PUT_LINE(p_imax5||' '||p_idmax5);
+     FOR v_std_linie IN  (((select * from (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film group by f.id,f.buget,f.pagina,f.data_lansare,f.profit,f.durata,f.durata,f.limba,f.titlu,n.id_film order by avg(valoare) desc) where rownum<11) union (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_idmax5 and valoare >=8) union (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_idmax4 and valoare >=8) union (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_idmax3 and valoare >=8) union (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_idmax2 and valoare >=8) union ((select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_idmax1 and valoare >=8)) minus (select titlu,durata,limba,profit,data_lansare,buget,pagina,id_film from filme f join notee n on f.id=n.id_film where n.id_utilizator=p_id_utilizator))
+) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id_film) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||'titlu='||v_std_linie.titlu||'^nota='||'^genuri='||v_genuri||'^dataLansare='||v_std_linie.data_lansare||'^buget='||v_std_linie.buget||'^profit='||v_std_linie.profit||'^durata='||v_std_linie.durata||'^limba='||v_std_linie.limba||'^paginaWeb='||v_std_linie.pagina||'@';
+
+    END LOOP;  
+    return v_lista;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE login(p_email IN varchar2,p_parola IN varchar2, p_rezultat OUT varchar2)
+AS
+   v_parola varchar2(30) := '';
+   v_id varchar2(30) :='';
+   v_test integer;
+BEGIN
+    select count(*) into v_test from emails where email=p_email;
+    if(v_test=0)
+    then
+    p_rezultat := 'Eroare: Utilizatorul cu email-ul '||p_email||' nu exista.';
+    else
+        select parola into v_parola from utilizatori natural join emails where email=p_email;
+       if(v_parola=p_parola)
+      then
+      select id into v_id from emails where email=p_email;
+      p_rezultat := 'Succes: Logare cu succes.'||v_id;
+      else
+      p_rezultat := 'Eroare: Parola gresita.';
+      end if;
+    end if;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE inregistrare(p_nume IN varchar2, p_prenume IN varchar2, p_email IN varchar2, p_parola IN varchar2, p_rezultat OUT varchar2)
+AS
+   v_rezultat varchar2(1000) := 'Succes: Inregistrare cu succes.';
+   v_test integer;
+   v_idmax integer;
+   v_test_email1 varchar2(30) :='';
+   v_test_email2 varchar2(30) :='';
+   v_test_email3 varchar2(30) :='';
+   v_test_email varchar2(50) :='';
+   v_i integer;
+BEGIN
+ IF(p_nume is null OR p_prenume is null OR p_email is null OR p_parola is null)
+ THEN
+   p_rezultat := 'Eroare: Unul sau mai multe campuri au fost lasate necompletate.';
+ ELSE
+     select count(*) into v_test from emails where email=p_email;
+     IF(v_test=1)
+     THEN
+      p_rezultat := 'Eroare: Email-ul este deja folosit de un alt cont.';
+     ELSE
+         IF(length(p_parola)<=5)
+         THEN
+          p_rezultat := 'Eroare: Parola este prea scurta.';
+         ELSE
+                v_test_email := p_email;
+                v_i := instr(v_test_email, '@');
+                v_test_email1 := substr(v_test_email, 1, v_i - 1);
+                v_test_email := substr(v_test_email, v_i + 1);
+                v_i := instr(v_test_email, '.');
+                v_test_email2 := substr(v_test_email, 1, v_i - 1);
+                v_test_email3 := substr(v_test_email, v_i + 1);
+             IF(p_email not like '%@%.%' or v_test_email1 is null or v_test_email2 is null or v_test_email3 is null or p_email like '%@%@%' or length(v_test_email3)>3)
+             THEN
+              p_rezultat := 'Eroare: Email invalid.';
+             ELSE
+                 select max(id)+1 into v_idmax from emails;
+                 insert into utilizatori values(v_idmax,p_nume,p_prenume,p_parola);
+                 insert into emails values (v_idmax,p_email);
+                 p_rezultat := 'Succes: Inregistrare cu succes.'||v_idmax;
+              END IF;
+          END IF;
+      END IF;
+  END IF;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE FUNCTION generare_parola
+RETURN varchar2 as
+ v_parola varchar2(40);
+BEGIN
+  v_parola := CHR(FLOOR(DBMS_RANDOM.VALUE(65,91))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(97,123))) || CHR(FLOOR(DBMS_RANDOM.VALUE(48,58))) || CHR(FLOOR(DBMS_RANDOM.VALUE(48,58)));
+  return v_parola;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE FUNCTION lista_filme_utilizator(p_id varchar2)
+RETURN varchar2 as
+  v_lista varchar2(32667) := '';
+  v_genuri varchar2(100) := '';
+BEGIN
+  FOR v_std_linie IN  (select * from utilizatori u join notee n on u.id=n.id_utilizator join filme f on n.id_film=f.id where u.id=p_id order by valoare desc) LOOP  
+        v_genuri :='';
+        FOR v_std_linie2 IN (select * from genuri where id_film=v_std_linie.id_film) LOOP
+        v_genuri := v_genuri||', '||v_std_linie2.gen;
+        END LOOP;
+        v_genuri := substr(v_genuri,3,length(v_genuri));
+        v_lista := v_lista||v_std_linie.titlu||'^'|| v_std_linie.valoare||'^'||v_genuri||'^'||v_std_linie.data_lansare||'^'||v_std_linie.buget||'^'||v_std_linie.profit||'^'||v_std_linie.durata||'^'||v_std_linie.limba||'^'||v_std_linie.pagina||'@';
+    END LOOP;  
+    return v_lista;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE id_film(p_titlu IN varchar2,p_id_film OUT varchar2)
+as
+BEGIN
+  select id into p_id_film from filme where titlu=p_titlu;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE adaugare_nota(p_id_utilizator IN varchar2, p_id_film IN varchar2, p_valoare IN integer, p_rezultat OUT varchar2)
+as
+  v_id_max integer;
+  v_test integer;
+BEGIN
+  select max(id)+1 into v_id_max from notee;
+  select count(*) into v_test from notee where id_utilizator=p_id_utilizator and id_film=p_id_film;
+  IF(v_test>0)
+  THEN
+  p_rezultat := 'Eroare: Utilizatorul are deja filmul in lista';
+  ELSE
+  insert into notee values(v_id_max,p_id_utilizator,p_id_film,p_valoare);
+  p_rezultat := 'Succes: Nota adaugata.';
+  END IF;
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE stergere_nota(p_id_utilizator IN varchar2, p_id_film IN varchar2, p_rezultat OUT varchar2)
+as
+BEGIN
+  delete from notee where id_utilizator=p_id_utilizator and id_film=p_id_film;
+  p_rezultat := 'Succes: Nota a fost stearsa.';
+END;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE OR REPLACE PROCEDURE actualizare_nota(p_id_utilizator IN varchar2, p_id_film IN varchar2, p_valoare IN integer, p_rezultat OUT varchar2)
+as
+BEGIN
+  update notee set valoare=p_valoare where id_utilizator=p_id_utilizator and id_film=p_id_film;
+  p_rezultat := 'Succes: Nota a fost actualizata.';
+END;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
